@@ -1,0 +1,2 @@
+# master-less mode for salt (for the sake of simplicity)
+file_client: local

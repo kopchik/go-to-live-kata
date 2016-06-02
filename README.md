@@ -1,3 +1,36 @@
+## Setup
+
+~~~
+vagrant plugin install vagrant-salt
+vagrant up
+~~~
+
+## Some Quirks
+
+Could be done in a more concise way, but because of salt bugs I used more verbose syntax.
+1. Container initialization is a bit long because we install salt from github and bootstrap scripts have numerous issues (they don't use --depth=1 for git clone, etc) and installs all the development dependencies.
+The salt-minion shipped with ubuntu 14.04 is has numerous bugs ([1],[3]).
+1. Yet bootstrap script does not install python-mysqldb which is required for mysql states.
+I modified the bootstrap script because it needs to be present at the time salt is running.
+1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support unix_socket. I decided not to go with backports or something.
+1. Some parameters could be parametrized, but I think yaml+templates look just ugly.
+
+
+## What's left
+
+1. Monitoring
+1. Backups
+1. User configs for homedir
+1. Some basic firewall protection
+1. Time sync. Is it needed inside
+
+
+## References
+[1] Crash with "KeyError: 'mysql_user.present'" message https://github.com/saltstack/salt/issues/27321
+[2] Crash: "KeyError: 'mysql_user.present'" https://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html
+[3] Stuck on "[apt-get] <defunct>" https://github.com/saltstack/salt/issues/9736
+
+
 Go to live! kata
 ==================================
 
