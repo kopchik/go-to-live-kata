@@ -68,3 +68,25 @@ apt-no-recommends:
     - mode: '0644'
     - follow_symlinks: False
 
+
+
+## taken from https://github.com/phistrom/ubuntu_workstation_salt
+ssh_server_usedns_no:
+    file.replace:
+        - name: /etc/ssh/sshd_config
+        - pattern: 'UseDNS.+'
+        - repl: "UseDNS no"
+        - flags:
+            - 'IGNORECASE'
+        - append_if_not_found: True
+        - require:
+            - pkg: openssh-server
+        - watch_in:
+            - service: openssh-server
+
+
+openssh-server:
+    pkg.installed: []
+    service.running:
+        - name: ssh
+

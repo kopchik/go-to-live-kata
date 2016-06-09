@@ -1,50 +1,150 @@
-## these packages can be useful, but not immediately needed
-#fullstackpkgs:
-#  pkg.installed:
-#    - install_recommends: False
-#    - pkgs:
-#      - build-essential
-#      - checkinstall
-
-
 wp_user:
   user.present:
-    - name: wp
+    - name: {{ grains['WP_USER'] }}
+    - home: {{ grains['WP_USER_HOME'] }}
     - shell: /bin/bash
     - createhome: True
+    - roomnumber: 666
+  file.directory:
+    - name: {{ grains['WP_USER_HOME'] }}
+    - group: www-data
 
 
+## Salt and/or python stuck here if we use pkg.installed for mariadb-server
+## https://github.com/saltstack/salt/issues/9736
+## Workaround: install manually in terminal.
 mysql-server:
   cmd.run:
-    ## Salt and/or python stuck here if we use pkg.installed for mariadb-server
-    ## https://github.com/saltstack/salt/issues/9736
-    ## Workaround: run in terminal and restart mariadb.
     - use_vt: True
     - name: |
         DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server
+    - unless: which mysqld
   pkg.installed:
     - pkgs:
       ## this one is for salt itself or mysql routines will not work with misleading errors
       - python-mysqldb
 
 
+
+# could be split in multiple rules, but, nah, fine like this :)
 wp_db_stuff:
   mysql_database.present:
-    - name: wp
+    - name: {{ grains['WP_DB'] }}
     - require:
       - id: mysql-server
+      - id: unix_sock
+      - id: wp_user
   mysql_user.present:
-    - name: wp
+    - name: {{ grains['WP_USER'] }}
     - host: localhost
     - allow_passwordless: True
     - unix_socket: True
-    - require:
-      - id: unix_sock
-      - id: wp_user
   mysql_grants.present:
     - grant: all privileges
-    - database: wp.*
-    - user: wp
+    - database: {{ grains['WP_DB'] }}.*
+    - user: {{ grains['WP_USER'] }}
+
+
+nginx:
+  pkg:
+    - installed
+  service.running:
+    - enable: True
+    - reload: True
+    - watch:
+      - pkg: nginx
+
+
+nginx-no-defalt:
+  file.absent:
+    - name: /etc/nginx/sites-enabled/default
+
+
+nginx-wp:
+  file.managed:
+    - name: /etc/nginx/sites-available/wordpress
+    - source: salt://configs/nginx-wp.cfg
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 644
+    - watch_in:
+      - service: nginx
+
+
+nginx-wp-symlink:
+  file.symlink:
+    - name: /etc/nginx/sites-enabled/wordpress
+    - target: /etc/nginx/sites-available/wordpress
+    - require:
+      - id: nginx-wp
+    - watch_in:
+      - service: nginx
+
+
+wp_repo:
+  pkg.installed:
+    - name: git
+  git.latest:
+    - name: https://github.com/WordPress/WordPress.git
+    - target: {{ grains['WP_PATH'] }}
+    - user:   {{ grains['WP_USER'] }}
+    - rev:    {{ grains['WP_VERSION'] }}
+#    - depth: 1  achtung, it won't fetch tags :(
+    - unless: wp-cli --path={{ grains['WP_PATH'] }} core is-installed
+    - require:
+      - id: wp_user
+      - id: git
+
+
+## run-time wordpress dependencies
+wp_deps:
+  pkg.installed:
+    - pkgs:
+      - php5-mysqlnd
+      - php5-fpm
+    - require:
+      - id: wp_repo
+      - id: mysql-server
+
+
+# actually copies file only if it is missing
+wp_fresh_config:
+  file.copy:
+    - name:   {{ grains['WP_PATH'] }}/wp-config.php
+    - source: {{ grains['WP_PATH'] }}/wp-config-sample.php
+
+
+# edit configuration file
+{% for key, value in [('database_name_here', grains['WP_DB']), ('username_here', grains['WP_USER']), ('password_here', '')] %}
+wp_config_{{ key }}:
+  file.replace:
+    - name: {{ grains['WP_PATH'] }}/wp-config.php
+    - pattern: {{ key }}
+    - repl: '{{ value }}'
+    - require:
+      - id: wp_fresh_config
+{% endfor %}
+
+
+# here we trust wp-cli not to do any harm
+wp-cli:
+  pkg.installed:
+      - name: php5-cli
+  file.managed:
+    - name: /usr/local/bin/wp-cli
+    - source: http://www.messir.net/static/tmp/wp-cli.phar
+    - source_hash: md5=b4344acd05a2cc9ba9c6ef1188a8a82b
+    - mode: 755
+
+
+# TODO: generate password
+install_wordpress:
+ cmd.run:
+  - runas: {{ grains['WP_USER'] }}
+  - cwd: {{ grains['WP_PATH'] }}
+  - name: 'wp-cli core install --url=http://localhost/wordpress --title="Oh My Wordpress" --admin_user=admin --admin_password=password --admin_email=exe.sre@messir.net'
+  - unless: wp-cli --path={{ grains['WP_PATH'] }} core is-installed
 
 
 ## activate auth_socket
@@ -54,3 +154,11 @@ unix_sock:
           mysql -e "INSTALL PLUGIN unix_socket SONAME 'auth_socket'"
     - onlyif: exit `mysql -BNe "select count(*) from INFORMATION_SCHEMA.PLUGINS where PLUGIN_NAME='unix_socket'"`
 
+
+## these packages can be useful, but not immediately needed
+#fullstackpkgs:
+#  pkg.installed:
+#    - install_recommends: False
+#    - pkgs:
+#      - build-essential
+#      - checkinstall
