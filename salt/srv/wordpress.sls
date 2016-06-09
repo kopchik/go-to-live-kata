@@ -108,7 +108,8 @@ wp_repo:
 
 php5-fpm:
   pkg.installed: []
-  ## remove default php-fpm pool for resources and security
+  service.running:
+    - enable: True
 
 
 ## run-time wordpress dependencies
@@ -129,8 +130,6 @@ wp_php-fpm_config:
     - source: salt://configs/php-fpm.cfg
     - name:   /etc/php5/fpm/pool.d/{{ grains['WP_USER'] }}.conf
     - template: jinja
-    - require:
-      - id: php5-fpm
     - watch_in:
       - service: php5-fpm
 
@@ -144,8 +143,8 @@ php5-fpm_default_pool:
     - watch_in:
       - service: php5-fpm
   # for some reason salt does not restart service, let's do it manually
-  cmd.run:
-    - name: /etc/init.d/php5-fpm restart
+  #cmd.run:
+  #  - name: /etc/init.d/php5-fpm restart
 
 
 # actually copies file only if it is missing
