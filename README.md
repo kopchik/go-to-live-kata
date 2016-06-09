@@ -1,11 +1,17 @@
+Go to live! kata
+==================================
+
+The original task is at the end of the file. Now the solution.
+
 ## Voice, Camera, Action!
 
+Deployment is easy:
 ~~~
 vagrant plugin install vagrant-salt
 vagrant up
 ~~~
 
-As it finishes, point your browser to http://localhost:8888/ and that's it :).
+Depending on the speed of the Internet, it will take 5-20minutes to finish. As it finishes, point your browser to http://localhost:8888/ and that's it :).
 Wordpress password for user **notadmin** is stored in `/root/mysite_wp_admin_passwd`.
 
 I used [4] and [5] to make the secured nginx configuration.
@@ -19,13 +25,14 @@ For security I disabled default sites of nginx and php-fpm.
 ## Some Quirks
 
 Could be done in a more concise way, but because of salt bugs I used more verbose syntax.
+
 1. Container initialization is a bit long because we install salt from github and bootstrap scripts have numerous issues (they may not use `--depth=1` for git clone, etc) and installs all the development dependencies.
-The salt-minion shipped with ubuntu 14.04 is has numerous bugs ([1],[3]).
+The salt-minion shipped with ubuntu 14.04 has numerous bugs ([1],[3]).
 1. Yet bootstrap script does not install python-mysqldb which is required for mysql states.
 I modified the bootstrap script because it needs to be present at the time salt is running.
-1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support `unix_socket`. I decided not to go with backports or something.
+1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support `unix_socket` auth. I decided not to go with backports or something.
 1. Some parameters could be parametrized, but I think yaml+templates look just ugly.
-1. We trust wp-cli provided by a third party is not malicious.
+1. We trust `wp-cli` provided by a third party is not malicious.
 
 
 ## What's left
@@ -44,15 +51,14 @@ There are a few things that I would do for a real production, but I consider not
 
 ## References
 
-[1] Crash with "KeyError: 'mysql_user.present'" message https://github.com/saltstack/salt/issues/27321
-[2] Crash: "KeyError: 'mysql_user.present'" https://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html
-[3] Stuck on "[apt-get] <defunct>" https://github.com/saltstack/salt/issues/9736
-[4] https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-with-nginx-on-ubuntu-14-04
-[5] https://codex.wordpress.org/Nginx
+[1] Crash with "KeyError: 'mysql_user.present'" message https://github.com/saltstack/salt/issues/27321  
+[2] Crash: "KeyError: 'mysql_user.present'"   https://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html  
+[3] Stuck on "[apt-get] <defunct>" https://github.com/saltstack/salt/issues/9736  
+[4] https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-with-nginx-on-ubuntu-14-04  
+[5] https://codex.wordpress.org/Nginx  
 
 
-Go to live! kata
-==================================
+## The task
 
 Contained in this repo, there are some instructions for a new application that will go live in the next month!
 
