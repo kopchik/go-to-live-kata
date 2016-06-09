@@ -4,7 +4,7 @@
 Vagrant.configure(2) do |config|
   config.vm.box = "ubuntu/trusty64"
   config.vm.hostname = "go-to-live"
-  config.vm.network "forwarded_port", guest: 80, host: 8888
+  config.vm.network "forwarded_port", guest: 8888, host: 8888
   # config.vm.box_check_update = false
 
   # pass-through salt configs into VM

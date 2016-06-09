@@ -1,35 +1,45 @@
-## Setup
+## Voice, Camera, Action!
 
 ~~~
 vagrant plugin install vagrant-salt
 vagrant up
 ~~~
-Then point your browser to http://localhost:8888/ and that's it :).
+
+As it finishes, point your browser to http://localhost:8888/ and that's it :).
+Wordpress password for user **notadmin** is stored in `/root/mysite_wp_admin_passwd`.
 
 I used [4] and [5] to make the secured nginx configuration.
 
 The deplyment is done via saltstack (like ansible but worse :)).
+WordPress version (and some other settings) can be specified in `salt/srv/_grains/wp_settings.py` .
 There are some nice dependencies so that, e.g., nginx will be restarted if its configuration is changed.
+For security I disabled default sites of nginx and php-fpm.
+
 
 ## Some Quirks
 
 Could be done in a more concise way, but because of salt bugs I used more verbose syntax.
-1. Container initialization is a bit long because we install salt from github and bootstrap scripts have numerous issues (they don't use --depth=1 for git clone, etc) and installs all the development dependencies.
+1. Container initialization is a bit long because we install salt from github and bootstrap scripts have numerous issues (they may not use `--depth=1` for git clone, etc) and installs all the development dependencies.
 The salt-minion shipped with ubuntu 14.04 is has numerous bugs ([1],[3]).
 1. Yet bootstrap script does not install python-mysqldb which is required for mysql states.
 I modified the bootstrap script because it needs to be present at the time salt is running.
-1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support unix_socket. I decided not to go with backports or something.
+1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support `unix_socket`. I decided not to go with backports or something.
 1. Some parameters could be parametrized, but I think yaml+templates look just ugly.
 1. We trust wp-cli provided by a third party is not malicious.
 
 
 ## What's left
 
+There are a few things that I would do for a real production, but I consider not essential for this task :)
+
 1. Monitoring
 1. Backups
-1. User configs for homedir
 1. Some basic firewall protection
-1. Time sync. Is it needed inside
+1. Time sync. Let's say it's not needed inside a VM
+1. SSL :)
+1. PHP accelerators, caching, php.ini ...
+1. sendmail
+1. Remove some default garbage like rpcbind, etc
 
 
 ## References

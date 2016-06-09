@@ -90,3 +90,6 @@ openssh-server:
     service.running:
         - name: ssh
 
+
+rpcbind:
+  pkg.purged: []

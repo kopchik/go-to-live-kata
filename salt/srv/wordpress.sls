@@ -25,7 +25,6 @@ mysql-server:
       - python-mysqldb
 
 
-
 # could be split in multiple rules, but, nah, fine like this :)
 wp_db_stuff:
   mysql_database.present:
@@ -48,6 +47,8 @@ wp_db_stuff:
 nginx:
   pkg:
     - installed
+  file.absent:
+    - name: /etc/nginx/sites-enabled/default
   service.running:
     - enable: True
     - reload: True
@@ -55,9 +56,15 @@ nginx:
       - pkg: nginx
 
 
-nginx-no-defalt:
-  file.absent:
-    - name: /etc/nginx/sites-enabled/default
+secure-nginx:
+    file.replace:
+        - name: /etc/nginx/nginx.conf
+        - pattern: '# server_tokens off;'
+        - repl: "server_tokens off;"
+        - require:
+            - pkg: nginx
+        - watch_in:
+            - service: nginx
 
 
 nginx-wp:
@@ -90,11 +97,20 @@ wp_repo:
     - target: {{ grains['WP_PATH'] }}
     - user:   {{ grains['WP_USER'] }}
     - rev:    {{ grains['WP_VERSION'] }}
-#    - depth: 1  achtung, it won't fetch tags :(
+    ## TODO achtung, it doesn't fetch tags with depth=1 :(
+    # - depth: 1
     - unless: wp-cli --path={{ grains['WP_PATH'] }} core is-installed
     - require:
       - id: wp_user
       - id: git
+      - id: wp-cli
+
+
+php5-fpm:
+  pkg.installed: []
+  ## remove default php-fpm pool for resources and security
+  file.absent:
+    - name: /etc/php5/fpm/pool.d/www.conf
 
 
 ## run-time wordpress dependencies
@@ -102,10 +118,23 @@ wp_deps:
   pkg.installed:
     - pkgs:
       - php5-mysqlnd
-      - php5-fpm
     - require:
       - id: wp_repo
       - id: mysql-server
+      - pkg: php5-fpm
+    - watch_in:
+          - service: php5-fpm
+
+
+wp_php-fpm_config:
+  file.managed:
+    - source: salt://configs/php-fpm.cfg
+    - name:   /etc/php5/fpm/pool.d/{{ grains['WP_USER'] }}.conf
+    - template: jinja
+    - require:
+      - id: php5-fpm
+    - watch_in:
+          - service: php5-fpm
 
 
 # actually copies file only if it is missing
@@ -128,6 +157,7 @@ wp_config_{{ key }}:
 
 
 # here we trust wp-cli not to do any harm
+# (mirrored on my server just in case)
 wp-cli:
   pkg.installed:
       - name: php5-cli
@@ -138,13 +168,21 @@ wp-cli:
     - mode: 755
 
 
-# TODO: generate password
 install_wordpress:
  cmd.run:
   - runas: {{ grains['WP_USER'] }}
   - cwd: {{ grains['WP_PATH'] }}
-  - name: 'wp-cli core install --url=http://localhost/wordpress --title="Oh My Wordpress" --admin_user=admin --admin_password=password --admin_email=exe.sre@messir.net'
+  - name: |
+      wp-cli core install \
+          --url=http://localhost:8888/ \
+          --title="Oh My Wordpress" \
+          --admin_user=notadmin \
+          --admin_password="{{ grains['WP_PASSWORD'] }}" \
+          --admin_email='pietro.dibello@xpeppers.com'
+      wp-cli plugin install relative-url --activate
   - unless: wp-cli --path={{ grains['WP_PATH'] }} core is-installed
+  - require:
+    - id: wp_php-fpm_config
 
 
 ## activate auth_socket
