@@ -25,6 +25,16 @@ mysql-server:
       - python-mysqldb
 
 
+## weird, default mysql installation is not secure -- it leaves root without password
+secure-mysql-server:
+  cmd.run:
+    - use_vt: True
+    - name: mysql -e "update mysql.user set plugin='unix_socket' where Password=''; flush privileges;"
+    - require:
+      - id: mysql-server
+      - id: unix_sock
+
+
 # could be split in multiple rules, but, nah, fine like this :)
 wp_db_stuff:
   mysql_database.present:
@@ -77,6 +87,8 @@ nginx-wp:
     - mode: 644
     - watch_in:
       - service: nginx
+    - require:
+      - pkg: nginx
 
 
 nginx-wp-symlink:
@@ -87,6 +99,8 @@ nginx-wp-symlink:
       - id: nginx-wp
     - watch_in:
       - service: nginx
+    - require:
+      - pkg: nginx
 
 
 wp_repo:
