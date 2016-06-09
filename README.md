@@ -20,6 +20,7 @@ The deplyment is done via saltstack (like ansible but worse :)).
 WordPress version (and some other settings) can be specified in `salt/srv/_grains/wp_settings.py` .
 There are some nice dependencies so that, e.g., nginx will be restarted if its configuration is changed.
 For security I disabled default sites of nginx and php-fpm.
+There are only nginx and ssh are reachable from outside.
 
 
 ## Some Quirks
@@ -39,7 +40,7 @@ I modified the bootstrap script because it needs to be present at the time salt 
 
 There are a few things that I would do for a real production, but I consider not essential for this task :)
 
-1. Monitoring
+1. Monitoring -- see [here](https://docs.google.com/presentation/d/1t3KnOT8ZPKsmT9yMjUvlOIxmcallNviUpQ9ooMrYX_8/edit?usp=sharing "I'm a super star ^_^") how to do it right :)
 1. Backups
 1. Some basic firewall protection
 1. Time sync. Let's say it's not needed inside a VM
