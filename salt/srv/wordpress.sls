@@ -109,8 +109,6 @@ wp_repo:
 php5-fpm:
   pkg.installed: []
   ## remove default php-fpm pool for resources and security
-  file.absent:
-    - name: /etc/php5/fpm/pool.d/www.conf
 
 
 ## run-time wordpress dependencies
@@ -123,7 +121,7 @@ wp_deps:
       - id: mysql-server
       - pkg: php5-fpm
     - watch_in:
-          - service: php5-fpm
+      - service: php5-fpm
 
 
 wp_php-fpm_config:
@@ -134,7 +132,20 @@ wp_php-fpm_config:
     - require:
       - id: php5-fpm
     - watch_in:
-          - service: php5-fpm
+      - service: php5-fpm
+
+
+# remove default pool because it is useless and insecure
+php5-fpm_default_pool:
+  file.absent:
+    - name: /etc/php5/fpm/pool.d/www.conf
+    - require:
+      - id: wp_php-fpm_config
+    - watch_in:
+      - service: php5-fpm
+  # for some reason salt does not restart service, let's do it manually
+  cmd.run:
+    - name: /etc/init.d/php5-fpm restart
 
 
 # actually copies file only if it is missing
@@ -168,6 +179,7 @@ wp-cli:
     - mode: 755
 
 
+# For relative URLs: wp-cli plugin install relative-url --activate
 install_wordpress:
  cmd.run:
   - runas: {{ grains['WP_USER'] }}
@@ -179,7 +191,6 @@ install_wordpress:
           --admin_user=notadmin \
           --admin_password="{{ grains['WP_PASSWORD'] }}" \
           --admin_email='pietro.dibello@xpeppers.com'
-      wp-cli plugin install relative-url --activate
   - unless: wp-cli --path={{ grains['WP_PATH'] }} core is-installed
   - require:
     - id: wp_php-fpm_config
