@@ -52,7 +52,7 @@ There are a few things that I would do for a real production, but I consider not
 ## References
 
 [1] Crash with "KeyError: 'mysql_user.present'" message https://github.com/saltstack/salt/issues/27321  
-[2] Crash: "KeyError: 'mysql_user.present'"   https://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html  
+[2] Yaml quirks https://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html  
 [3] Stuck on "[apt-get] <defunct>" https://github.com/saltstack/salt/issues/9736  
 [4] https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-with-nginx-on-ubuntu-14-04  
 [5] https://codex.wordpress.org/Nginx  
