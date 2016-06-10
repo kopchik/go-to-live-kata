@@ -34,6 +34,7 @@ I modified the bootstrap script because it needs to be present at the time salt 
 1. I use mariadb because the ancent mysql shipped with ubuntu 14.04 does not support `unix_socket` auth. I decided not to go with backports or something.
 1. Some parameters could be parametrized, but I think yaml+templates look just ugly.
 1. We trust `wp-cli` provided by a third party is not malicious.
+1. Password remains in logs of salt. They are not readable by a normal user, but...
 
 
 ## What's left
