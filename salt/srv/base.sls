@@ -93,3 +93,16 @@ openssh-server:
 
 rpcbind:
   pkg.purged: []
+
+
+## root comes with unknown hash
+root:
+  user.present:
+    - password: '*'
+
+
+## I don't know what is this user for and I don't like it
+ubuntu:
+  user.absent:
+    - purge: True
+    - force: True
